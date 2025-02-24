@@ -13,7 +13,7 @@ pip install git+https://github.com/QDU-lab/qdu_qcodes_drivers.git@main
 
 If you want an editable install first clone curent repository locally:
 ```
-git clone https://github.com/QDU-lab/qdu_qcodes_drivers.git@main
+git clone https://github.com/QDU-lab/qdu_qcodes_drivers.git
 ```
 
 And then install with pip
