@@ -1,7 +1,7 @@
 # This Python file uses the following encoding: utf-8
 # Etienne Dumur <etienne.dumur@gmail.com>, august 2020
 # Simon Zihlmannr <zihlmann.simon@gmail.com>, february/march 2021
-# Mikhail Belianchikov <experimenter021@gmail.com>, february 2025
+# Mikhail Belianchikov <experimenter021@gmail.com>, february/april 2025
 import logging
 import numpy as np
 import cmath, math
@@ -141,17 +141,14 @@ class FrequencySweepMagPhase(MultiParameter):
         self.instrument.ask('*OPC?') # Wait for measurement to complete
 
         # get data from instrument
-#        self.instrument.write('CALC1:TRAC1:FORM SMITH')  # ensure correct format
         self.instrument.write('CALC1:TRAC1:FORM POLAR')  # ensure correct format
         sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
-        self.instrument.write('CALC1:TRAC1:FORM MLOG')
+        self.instrument.write('CALC1:TRAC1:FORM MLOG')  # switch back to standart representation
 
         # Get data as numpy array
         sxx = np.fromstring(sxx_raw, dtype=float, sep=',')
         sxx = sxx[0::2] + 1j*sxx[1::2]
 
-
-#        return sxx.real, sxx.imag
         return self.instrument._db(sxx), np.unwrap(np.angle(sxx))
 
 
@@ -214,7 +211,6 @@ class PointMagPhase(MultiParameter):
         self.instrument.ask('*OPC?') # Wait for measurement to complete
 
         # get data from instrument
-#        self.instrument.write('CALC1:TRAC1:FORM SMITH')  # ensure correct format
         self.instrument.write('CALC1:TRAC1:FORM POLAR')  # ensure correct format
         sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
 
@@ -225,9 +221,79 @@ class PointMagPhase(MultiParameter):
         # Return the average of the trace, which will have "start" as
         # its setpoint
         sxx_mean = np.mean(sxx)
-        
-        return sxx_mean
-#        return 20*math.log10(abs(sxx_mean)), cmath.phase(sxx_mean)
+        return 20*math.log10(abs(sxx_mean)), (cmath.phase(sxx_mean))
+
+
+
+class PointIQ(MultiParameter):
+    """
+    Returns the average Sxx of a frequency sweep, in terms of I and Q.
+    Work around for a CW mode where only one point is read.
+    npts=2 and stop = start + 1 (in Hz) is required.
+    """
+
+    def __init__(self,
+        name: str,
+        instrument: "M5180",
+        **kwargs: Any,
+        ) -> None:
+        """I and Q measurement of a single point at start
+        frequency.
+
+        Args:
+            name (str): Name of point measurement
+            instrument:  Instrument to which parameter is bound to.
+        """
+
+        super().__init__(
+            name,
+            instrument=instrument,
+            names=(
+                f"{instrument.short_name}_{name}_i",
+                f"{instrument.short_name}_{name}_q"),
+            labels=(
+                f"{instrument.short_name} {name} i",
+                f"{instrument.short_name} {name} q",
+            ),
+            units=("V", "V"),
+            setpoints=((), (),),
+            shapes=((), (),),
+            **kwargs,
+        )
+
+    def get_raw(self) -> Tuple[ParamRawDataType, ParamRawDataType]:
+        """Gets data from instrument
+
+        Returns:
+            Tuple[ParamRawDataType, ...]: I, Q
+        """
+
+        assert isinstance(self.instrument, M5180)
+        # check that npts, start and stop fullfill requirements if point_check_sweep_first is True.
+        if self.instrument.point_check_sweep_first():
+            if self.instrument.npts() != 2:
+                raise ValueError('Npts is not 2 but {}. Please set it to 2'.format(self.instrument.npts()))
+            if self.instrument.stop() - self.instrument.start() != 1:
+                raise ValueError('Stop-start is not 1 Hz but {} Hz. Please adjust'
+                                'start or stop.'.format(self.instrument.stop()-self.instrument.start()))
+
+        self.instrument.write('CALC1:PAR:COUN 1') # 1 trace
+        self.instrument.write('CALC1:PAR1:DEF {}'.format(self.name[-3:]))
+        self.instrument.trigger_source('bus') # set the trigger to bus
+        self.instrument.write('TRIG:SEQ:SING') # Trigger a single sweep
+        self.instrument.ask('*OPC?') # Wait for measurement to complete
+
+        # get data from instrument
+        self.instrument.write('CALC1:TRAC1:FORM SMITH')  # ensure correct format
+        sxx_raw = self.instrument.ask("CALC1:TRAC1:DATA:FDAT?")
+
+        # Get data as numpy array
+        sxx = np.fromstring(sxx_raw, dtype=float, sep=',')
+
+        # Return the average of the trace, which will have "start" as
+        # its setpoint
+        return np.mean(sxx[0::2]), np.mean(sxx[1::2])
+
 
 
 class M5180(VisaInstrument):
@@ -451,15 +517,19 @@ class M5180(VisaInstrument):
         self.add_parameter(name='point_s22',
                            parameter_class=PointMagPhase)
 
-        self.add_parameter(name="point_check_sweep_first",
-            parameter_class=ManualParameter,
-            initial_value=True,
-            vals=Bool(),
-            docstring="Parameter that enables a few commands, which are called"
-            "before each get of a point_sxx parameter checking whether the vna"
-            "is setup correctly. Is recommended to be True, but can be turned"
-            "off if one wants to minimize overhead.",
-        )
+        self.add_parameter(name='point_s11_iq',
+                           parameter_class=PointIQ)
+
+        self.add_parameter(name='point_s12_iq',
+                           parameter_class=PointIQ)
+
+        self.add_parameter(name='point_s21_iq',
+                           parameter_class=PointIQ)
+
+        self.add_parameter(name='point_s22_iq',
+                           parameter_class=PointIQ)
+
+
 
         self.add_parameter(
             "freq_axis",
@@ -478,6 +548,15 @@ class M5180(VisaInstrument):
             label="Spectrum",
             parameter_class=FrequencySweepComplex,
             vals=Arrays(shape=(self.npts.get_latest,), valid_types=(complex,),),
+        )
+        self.add_parameter(name="point_check_sweep_first",
+            parameter_class=ManualParameter,
+            initial_value=True,
+            vals=Bool(),
+            docstring="Parameter that enables a few commands, which are called"
+            "before each get of a point_sxx parameter checking whether the vna"
+            "is setup correctly. Is recommended to be True, but can be turned"
+            "off if one wants to minimize overhead.",
         )
         self.connect_message()
 
