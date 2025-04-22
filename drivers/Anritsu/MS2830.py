@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul  5 18:21:54 2024
+
+@author: QDUnit
+"""
 import numpy as np
 from qcodes import VisaInstrument
 from qcodes.validators import Arrays, Enum, Ints, Numbers
@@ -9,6 +15,7 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
     ParameterWithSetpoints
 )
+
 
 class GeneratedSetPoints(Parameter):
     """
