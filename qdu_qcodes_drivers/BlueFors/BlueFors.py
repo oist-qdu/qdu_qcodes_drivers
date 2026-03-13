@@ -164,7 +164,7 @@ class BlueFors(Instrument):
                                 header    = None)
 
             # There is a space before the day
-            df.index = pd.to_datetime(df['date']+'-'+df['time'], format=' %d-%m-%y-%H:%M:%S')
+            df.index = pd.to_datetime(df['date']+'-'+df['time'], format='%d-%m-%y-%H:%M:%S')
 
             return df.iloc[-1]['y']
         except (PermissionError, OSError) as err:
