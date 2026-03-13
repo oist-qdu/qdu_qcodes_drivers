@@ -5,6 +5,6 @@ exec(open('drivers/_version.py').read())
 setup(
     name='qdu_qcodes_drivers',
     version=__version__,
-    packages=find_packages(),
+    packages=find_packages(include=['drivers']), 
     install_requires=[]
 )
