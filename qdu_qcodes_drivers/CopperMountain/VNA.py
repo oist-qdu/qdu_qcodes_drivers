@@ -56,7 +56,7 @@ class FrequencySweepComplex(ParameterWithSetpoints):
         """Gets data from instrument
 
         """
-        assert isinstance(self.instrument, M5180)
+        assert isinstance(self.instrument, VNA)
         self.instrument.write('CALC1:PAR:COUN 1') # 1 trace
         self.instrument.trigger_source('bus') # set the trigger to bus
         self.instrument.write('TRIG:SEQ:SING') # Trigger a single sweep
@@ -82,7 +82,7 @@ class FrequencySweepMagPhase(MultiParameter):
         start: float,
         stop: float,
         npts: int,
-        instrument: "M5180",
+        instrument: "VNA",
         **kwargs: Any,
         ) -> None:
         """
@@ -139,7 +139,7 @@ class FrequencySweepMagPhase(MultiParameter):
         Returns:
             Tuple[ParamRawDataType, ...]: magnitude, phase
         """
-        assert isinstance(self.instrument, M5180)
+        assert isinstance(self.instrument, VNA)
         self.instrument.write('CALC1:PAR:COUN 1') # 1 trace
         self.instrument.write('CALC1:PAR1:DEF {}'.format(self.name))
         self.instrument.trigger_source('bus') # set the trigger to bus
@@ -170,7 +170,7 @@ class PointMagPhase(MultiParameter):
 
     def __init__(self,
         name: str,
-        instrument: "M5180",
+        instrument: "VNA",
         **kwargs: Any,
         ) -> None:
         """Magnitude and phase measurement of a single point at start
@@ -204,7 +204,7 @@ class PointMagPhase(MultiParameter):
             Tuple[ParamRawDataType, ...]: magnitude, phase
         """
 
-        assert isinstance(self.instrument, M5180)
+        assert isinstance(self.instrument, VNA)
         # check that npts, start and stop fullfill requirements if point_check_sweep_first is True.
         if self.instrument.point_check_sweep_first:
             if self.instrument.npts() != 2:
@@ -236,9 +236,9 @@ class PointMagPhase(MultiParameter):
 #        return 20*math.log10(abs(sxx_mean)), cmath.phase(sxx_mean)
 
 
-class M5180(VisaInstrument):
+class VNA(VisaInstrument):
     """
-    This is the QCoDeS python driver for the VNA M5180 from Copper Mountain
+    This is the QCoDeS python driver for the VNA Planar304/1 C1220 from Copper Mountain
     """
 
     def __init__(self, name       : str,
@@ -246,19 +246,6 @@ class M5180(VisaInstrument):
                        terminator : str="\n",
                        timeout    : int=100000,
                        **kwargs):
-        """
-        QCoDeS driver for the VNA M5180 from Copper Mountain.
-        This driver only uses one channel.
-
-        Args:
-            name (str): Name of the instrument.
-            address (str): Address of the instrument.
-            terminator (str): Terminator character of
-                the string reply. Optional, default ``"\\n"``
-            timeout (int): VISA timeout is set purposely
-                to a long time to allow long spectrum measurement.
-                Optional, default 100000
-        """
 
         super().__init__(name       = name,
                          address    = address,
