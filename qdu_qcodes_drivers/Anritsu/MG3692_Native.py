@@ -50,6 +50,22 @@ class MG3692(VisaInstrument):
                            unit='MHz')
 
 
+        self.add_parameter('pulse_period',
+                           label='Pulse Period',
+                           get_cmd='OPP',
+                           get_parser=float,
+                           set_cmd='PER {:.6f} US',
+                           unit='$\u$s')
+
+        self.add_parameter('pulse_width',
+                           label='Pulse Width',
+                           get_cmd='OPW',
+                           get_parser=float,
+                           set_cmd='PW {:.6f} US',
+                           unit='$\u$s')
+
+        self.connect_message()
+
         self.connect_message()
 
     def get_idn(self):
