@@ -29,13 +29,13 @@ class AnritsuMS2025B(VisaInstrument):
         100,
         200,
         500,
-        1_000,
-        2_000,
-        5_000,
-        10_000,
-        20_000,
-        50_000,
-        100_000,
+        1000,
+        2000,
+        5000,
+        10000,
+        20000,
+        50000,
+        100000,
     )
 
     SWEEP_COMPLETE_MASK = 256
@@ -129,6 +129,7 @@ class AnritsuMS2025B(VisaInstrument):
             get_cmd=":SENS:SWE:IFBW?",
             set_cmd=":SENS:SWE:IFBW {:d}",
             get_parser=lambda x: int(float(x)),
+            set_parser=int,
             vals=Enum(*self.VALID_IFBW),
         )
 
