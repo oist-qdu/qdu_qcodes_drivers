@@ -170,7 +170,7 @@ class AnritsuMS2025B(VisaInstrument):
         )
 
         self.add_parameter(
-            "frequency_axis",
+            "freq_axis",
             label="Frequency",
             unit="Hz",
             get_cmd=self._get_frequencies,
@@ -180,12 +180,12 @@ class AnritsuMS2025B(VisaInstrument):
         )
 
         self.add_parameter(
-            "trace",
+            "complex",
             label="S parameter",
             unit="",
             parameter_class=ParameterWithSetpoints,
             setpoints=(
-                self.frequency_axis,
+                self.freq_axis,
             ),
             get_cmd=self._get_trace,
             vals=Arrays(
