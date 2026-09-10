@@ -90,7 +90,7 @@ class Agilent2024(VisaInstrument):
     """
 
     default_terminator = "\n"
-    default_timeout = 5
+    default_timeout = 30
 
     def __init__(
         self,
